@@ -1,3 +1,4 @@
+```
 gesture_server/
 │
 ├── app/
@@ -15,3 +16,4 @@ gesture_server/
 ├── run.py
 ├── .gitignore
 └── requirements.txt
+```
