@@ -1,12 +1,17 @@
 from flask import Blueprint, request, jsonify
 from firebase_admin import db
 from app.routes.mode import current_mode
+from flasgger.utils import swag_from
+import os
 
 dashboard_bp = Blueprint("dashboard", __name__)
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
 
 # 전체 전자기기 상태 조회
 @dashboard_bp.route("/dashboard/devices", methods=["GET"])
+@swag_from(os.path.join(BASE_DIR, "docs/swagger/dashboard/dashboard_get_devices.yml"))
 def get_devices_status():
     status_data = db.reference("status").get()
     return jsonify(status_data or {})
@@ -14,12 +19,14 @@ def get_devices_status():
 
 # 현재 모드 조회
 @dashboard_bp.route("/dashboard/mode", methods=["GET"])
+@swag_from(os.path.join(BASE_DIR, "docs/swagger/dashboard/dashboard_get_current_mode.yml"))
 def get_current_mode():
     return jsonify({"current_mode" : current_mode["value"]})
 
 
 # 손동작과 매핑되지 않은 컨트롤(버튼) 목록 조회
 @dashboard_bp.route("/dashboard/unmapped_controls", methods=["GET"])
+@swag_from(os.path.join(BASE_DIR, "docs/swagger/dashboard/dashboard_get_unmapped_controls.yml"))
 def get_unmapped_controls():
     mode = request.args.get("mode")
     if not mode:
@@ -41,7 +48,8 @@ def get_unmapped_controls():
 
 
 # 제스처 추가 시 선택 가능한 모드 조회
-@dashboard_bp.route("dashboard/modes", methods=["GET"])
+@dashboard_bp.route("/dashboard/modes", methods=["GET"])
+@swag_from(os.path.join(BASE_DIR, "docs/swagger/dashboard/dashboard_get_modes.yml"))
 def get_modes():
     ref = db.reference("ir_codes").get()
     return jsonify(list(ref.keys()) if ref else [])
@@ -49,6 +57,7 @@ def get_modes():
 
 # 제스처 추가
 @dashboard_bp.route("/dashboard/add_gesture", methods=["POST"])
+@swag_from(os.path.join(BASE_DIR, "docs/swagger/dashboard/dashboard_post_add_gesture.yml"))
 def add_gesture():
     data = request.get_json()
     gesture = data.get("gesture")

@@ -1,0 +1,15 @@
+get:
+  summary: 매핑되지 않은 버튼 목록 조회
+  parameters:
+    - name: mode
+      in: query
+      required: true
+      schema:
+        type: string
+      description: 모드 이름
+  responses:
+    200:
+      description: 매핑되지 않은 버튼 이름 리스트
+      content:
+        application/json:
+          example: ["on", "off", "toggle"]

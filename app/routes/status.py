@@ -1,10 +1,15 @@
 from flask import Blueprint, request, jsonify
 from firebase_admin import db
+from flasgger.utils import swag_from
+import os
 
 status_bp = Blueprint("status", __name__)
 
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+
 # 특정 전자기기 상태 조회
 @status_bp.route("/get_status", methods=["GET"])
+@swag_from(os.path.join(BASE_DIR, "docs/swagger/status/status_get_status.yml"))
 def get_status():
     device = request.args.get("device")
     if not device:
@@ -19,6 +24,7 @@ def get_status():
 
 # 특정 전자기기 상태 설정
 @status_bp.route("/set_status", methods=["POST"])
+@swag_from(os.path.join(BASE_DIR, "docs/swagger/status/status_post_set_status.yml"))
 def set_status():
     data = request.get_json()
     device = data.get("device")

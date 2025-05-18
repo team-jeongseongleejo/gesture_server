@@ -1,9 +1,11 @@
 from flask import Flask
 from firebase_admin import credentials, initialize_app
 from .config import Config
+from flasgger import Swagger
 
 def create_app():
     app = Flask(__name__)
+    #Swagger(app)
     app.config.from_object(Config)
 
     cred = credentials.Certificate("firebase_config.json")

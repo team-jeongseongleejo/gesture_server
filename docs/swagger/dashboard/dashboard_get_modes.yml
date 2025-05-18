@@ -1,0 +1,8 @@
+get:
+  summary: 사용 가능한 모드 목록 조회
+  responses:
+    200:
+      description: 사용 가능한 모드 리스트
+      content:
+        application/json:
+          example: ["light", "fan", "projector"]

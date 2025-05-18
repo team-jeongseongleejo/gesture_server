@@ -1,0 +1,17 @@
+get:
+  summary: 특정 기기 상태 조회
+  parameters:
+    - name: device
+      in: query
+      required: true
+      schema:
+        type: string
+      description: 조회할 기기 이름
+  responses:
+    200:
+      description: 기기 상태 정보
+      content:
+        application/json:
+          example:
+            power: on
+            log: "버튼으로 작동됨"

@@ -1,0 +1,11 @@
+get:
+  summary: 전체 기기 상태 조회
+  description: Firebase의 status 항목에서 모든 디바이스 상태를 조회합니다.
+  responses:
+    200:
+      description: 상태 목록 반환
+      content:
+        application/json:
+          example:
+            light: { power: "on", log: "최근 켜짐" }
+            fan: { power: "off", log: "수동 종료됨" }

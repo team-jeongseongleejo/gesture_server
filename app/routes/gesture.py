@@ -2,12 +2,17 @@ from flask import Blueprint, request, jsonify
 from firebase_admin import db
 from app.routes.mode import current_mode
 from app.services.mqtt_service import publish_ir
+from flasgger.utils import swag_from
+import os
 
 gesture_bp = Blueprint("gesture", __name__)
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
 
 # 현재 모드에서 제스처 실행
 @gesture_bp.route("/gesture", methods=["POST"])
+@swag_from(os.path.join(BASE_DIR, "docs/swagger/gesture/gesture_post_handle_gesture.yml"))
 def handle_gesture():
     gesture = request.get_json().get("gesture")
     if not gesture:

@@ -1,0 +1,25 @@
+post:
+  summary: 제스처 등록
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            gesture:
+              type: string
+            mode:
+              type: string
+            control:
+              type: string
+            label:
+              type: string
+        example:
+          gesture: circle
+          mode: light
+          control: toggle
+          label: "전등 토글"
+  responses:
+    200:
+      description: 제스처 등록 성공

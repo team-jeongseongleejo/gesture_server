@@ -1,0 +1,22 @@
+post:
+  summary: 기기 상태 설정
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            device:
+              type: string
+            power:
+              type: string
+            log:
+              type: string
+        example:
+          device: fan
+          power: on
+          log: "버튼으로 작동됨"
+  responses:
+    200:
+      description: 상태 설정 성공

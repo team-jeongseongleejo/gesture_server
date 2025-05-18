@@ -1,12 +1,17 @@
 from flask import Blueprint, request, jsonify
 from firebase_admin import db
+from flasgger.utils import swag_from
+import os
 
 mode_bp = Blueprint("mode", __name__)
 current_mode = {"value" : None}
 
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+
 
 # 모드 설정
-@mode_bp.route("/set_mode", methos=["POST"])
+@mode_bp.route("/set_mode", methods=["POST"])
+@swag_from(os.path.join(BASE_DIR, "docs/swagger/mode/mode_post_set_mode.yml"))
 def set_mode():
     data = request.get_json()
     gesture = data.get("gesture")
