@@ -23,6 +23,10 @@ def get_status():
 
 
 # 특정 전자기기 상태 설정
+def set_device_status(device, power, log):
+    db.reference(f"status/{device}/power").set(power)
+    db.reference(f"status/{device}/log").update(log)
+
 @status_bp.route("/set_status", methods=["POST"])
 @swag_from(os.path.join(BASE_DIR, "docs/swagger/status/status_post_set_status.yml"))
 def set_status():
@@ -34,9 +38,10 @@ def set_status():
     if not all([device, power, log]):
         return jsonify({"error" : "device, power, log가 모두 필요합니다."}), 400
     
-    db.reference(f"status/{device}").update({
-        "power" : power,
-        "log" : log
-    })
+    #db.reference(f"status/{device}").update({
+    #    "power" : power,
+    #    "log" : log
+    #})
+    set_device_status(device, power, log)
 
     return jsonify({"message" : f"{device} 상태가 업데이트 되었습니다."})

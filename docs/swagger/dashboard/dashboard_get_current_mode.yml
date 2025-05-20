@@ -1,10 +1,18 @@
 get:
   summary: 현재 모드 조회
   description: 현재 설정된 제어 모드를 반환합니다.
+  parameters:
+    - name: type
+      in: query
+      required: false
+      type: string
+      enum: []
   responses:
     200:
       description: 현재 모드
-      content:
-        application/json:
-          example:
-            current_mode: light
+      schema:
+        type: object
+        properties:
+          current_mode:
+            type: string
+            example: light

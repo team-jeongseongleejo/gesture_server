@@ -1,16 +1,17 @@
 post:
   summary: 제스처 실행
-  requestBody:
-    required: true
-    content:
-      application/json:
-        schema:
-          type: object
-          properties:
-            gesture:
-              type: string
-        example:
-          gesture: wave
+  consumes:
+    - application/json
+  parameters:
+    - in: body
+      name: body
+      required: true
+      schema:
+        type: object
+        properties:
+          gesture:
+            type: string
+            example: wave
   responses:
     200:
-      description: IR 명령 MQTT 전송 성공
+      description: 성공적으로 처리됨(모드 설정 / IR 명령 MQTT 전송)

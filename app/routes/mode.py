@@ -21,7 +21,7 @@ def set_mode():
     
     mode_data = db.reference(f"mode_gesture/{gesture}").get()
     if mode_data is None:
-        return jsonify({"error": f"mode_gesture/{gesture}에 해당하는 모드드가 없습니다."}), 404
+        return jsonify({"error": f"mode_gesture/{gesture}에 해당하는 모드가 없습니다."}), 404
     
     current_mode["value"] = mode_data.get("mode")
     return jsonify({"message" : f"현재 모드가 '{current_mode['value']}'로 설정되었습니다"})

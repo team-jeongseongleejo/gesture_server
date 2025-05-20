@@ -17,7 +17,7 @@ swagger = Swagger(app, config={
     "static_url_path": "/flasgger_static",
     "swagger_ui": True,
     "specs_route": "/apidocs/",
-    "basePath": ".",  # 📌 여기를 "." 또는 "/"로 설정
+    "basePath": "/",  # 📌 여기를 "." 또는 "/"로 설정
 })
 
 # -----------------------

@@ -21,7 +21,7 @@ def get_devices_status():
 @dashboard_bp.route("/dashboard/mode", methods=["GET"])
 @swag_from(os.path.join(BASE_DIR, "docs/swagger/dashboard/dashboard_get_current_mode.yml"))
 def get_current_mode():
-    return jsonify({"current_mode" : current_mode["value"]})
+    return jsonify({"current_mode": current_mode["value"] or "None"})
 
 
 # 손동작과 매핑되지 않은 컨트롤(버튼) 목록 조회

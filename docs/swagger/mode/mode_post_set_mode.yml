@@ -1,16 +1,17 @@
 post:
   summary: 제스처 기반 모드 설정
-  requestBody:
-    required: true
-    content:
-      application/json:
-        schema:
-          type: object
-          properties:
-            gesture:
-              type: string
-        example:
-          gesture: circle
+  consumes:
+    - application/json
+  parameters:
+    - in: body
+      name: body
+      required: true
+      schema:
+        type: object
+        properties:
+          gesture:
+            type: string
+            example: circle
   responses:
     200:
       description: 모드 설정 성공

@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from firebase_admin import db
 from app.routes.mode import current_mode
+from app.routes.status import set_device_status
 from app.services.mqtt_service import publish_ir
 from flasgger.utils import swag_from
 import os
@@ -9,6 +10,68 @@ gesture_bp = Blueprint("gesture", __name__)
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
+def infer_device_status(device, control):
+    cyclic_logs = {
+        "light": {
+            "color": ["주백색(Natural)", "주광색(Cool)", "전구색(Warm)"]
+        },
+        "projector": {
+            "mute": ["무음 설정", "무음 해제"]
+            #"HDMI_InOut" : ["HDMI in", "HDMI out"]
+        }
+    }
+
+    static_logs = {
+        "light": {
+            "10min": "타이머 10분 설정",
+            "2min": "타이머 2분 설정", 
+            "30min": "타이머 30분 설정",
+            "60min": "타이머 60분 설정",
+            "brighter": "밝게",
+            "dimmer": "어둡게"
+        },
+        "projector": {
+            "HDMI_InOut": "HDMI in/out", 
+            "HDMI_VOL_down": "HDMI 음량-",
+            "HDMI_VOL_up": "HDMI 음량+",
+            "VOL_down": "음량-",
+            "VOL_up": "음량+",
+            "down": "아래로",
+            "home": "홈",
+            "left": "왼쪽으로",
+            "menu": "메뉴",
+            "mid": "선택",
+            "pointer": "포인터",
+            "right": "오른쪽으로",
+            "up": "위로"
+        }
+    }
+
+    # 현재 상태 가져오기
+    current_power = db.reference(f"status/{device}/power").get() or "off"
+    log_data = db.reference(f"status/{device}/log").get()
+    current_log = log_data if isinstance(log_data, dict) else {}
+
+    # power 설정
+    if control == "power":
+        power = "off" if current_power == "on" else "on"
+        return power, {"power": power}
+    
+    # cyclic log 설정
+    cyclic = cyclic_logs.get(device, {}).get(control)
+    if cyclic:
+        prev = current_log.get(control)
+        if prev in cyclic:
+            idx = (cyclic.index(prev) + 1) % len(cyclic)
+        else:
+            idx = 0
+        return current_power, {control: cyclic[idx]}
+
+    # static log 설정
+    static = static_logs.get(device, {}).get(control)
+    if static:
+        return current_power, {control: static}
+    
 
 # 현재 모드에서 제스처 실행
 @gesture_bp.route("/gesture", methods=["POST"])
@@ -61,4 +124,22 @@ def handle_gesture():
     if result.rc != 0:
         return jsonify({"error" : f"MQTT 전송 실패 (코드 {result.rc})"}), 500
     
+    device = mode
+    power, partial_log = infer_device_status(device, control)
+
+    log_ref = db.reference(f"status/{device}/log")
+    # light 상태 설정
+    if device == "light":
+        if control == "color":
+            log_ref.set(partial_log)
+        else:
+            current_log = log_ref.get() or {}
+            color = current_log.get("color")
+            if color:
+                partial_log["color"] = color
+            log_ref.set(partial_log)
+    # 그 외 기기 상태 설정
+    db.reference(f"status/{device}/log").set(partial_log)    
+    # 상태 업데이트
+    set_device_status(device = payload["mode"], power = power, log = partial_log)
     return jsonify({"message" : "전송 성공", "payload" : payload})
