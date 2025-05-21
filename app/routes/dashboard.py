@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
 from firebase_admin import db
-from app.routes.mode import current_mode
 from flasgger.utils import swag_from
 import os
 
@@ -21,7 +20,9 @@ def get_devices_status():
 @dashboard_bp.route("/dashboard/mode", methods=["GET"])
 @swag_from(os.path.join(BASE_DIR, "docs/swagger/dashboard/dashboard_get_current_mode.yml"))
 def get_current_mode():
-    return jsonify({"current_mode": current_mode["value"] or "None"})
+    mode = db.reference(f"user_info/current_device").get()
+    print(mode)
+    return jsonify({"current_mode": mode or "None"})
 
 
 # 손동작과 매핑되지 않은 컨트롤(버튼) 목록 조회
@@ -52,6 +53,7 @@ def get_unmapped_controls():
 @swag_from(os.path.join(BASE_DIR, "docs/swagger/dashboard/dashboard_get_modes.yml"))
 def get_modes():
     ref = db.reference("ir_codes").get()
+    print(list(ref.keys()) if ref else [])
     return jsonify(list(ref.keys()) if ref else [])
 
 

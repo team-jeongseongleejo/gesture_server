@@ -4,7 +4,6 @@ from flasgger.utils import swag_from
 import os
 
 mode_bp = Blueprint("mode", __name__)
-current_mode = {"value" : None}
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
@@ -23,5 +22,6 @@ def set_mode():
     if mode_data is None:
         return jsonify({"error": f"mode_gesture/{gesture}에 해당하는 모드가 없습니다."}), 404
     
-    current_mode["value"] = mode_data.get("mode")
-    return jsonify({"message" : f"현재 모드가 '{current_mode['value']}'로 설정되었습니다"})
+    selected_mode = mode_data.get("mode")
+    db.reference("user_info/current_device").set(selected_mode)
+    return jsonify({"message" : f"현재 모드가 '{selected_mode}'로 설정되었습니다"})
