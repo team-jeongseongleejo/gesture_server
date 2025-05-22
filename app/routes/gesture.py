@@ -80,34 +80,39 @@ def handle_gesture():
     if not gesture:
         return jsonify({"error": "제스처 값이 없습니다."}), 400
     
+    # 인식된 손동작 업데이트
+    db.reference(f"user_info/last_gesture").set(gesture)
+
     mode_data = db.reference(f"mode_gesture/{gesture}").get()
     selected_mode = mode_data.get("mode") if mode_data else None
-    current_mode = db.reference(f"user_info/current_device").get()
+    user_ref = db.reference(f"user_info/current_device")
+    current_mode = user_ref.get()
 
     # 모드 설정
     if selected_mode:
         # 모드 선택
         if not current_mode or current_mode == "null":
-            db.reference("user_info/current_device").set(selected_mode)
+            user_ref.set(gesture)
             return jsonify({"message": f"모드 '{selected_mode}'로 설정되었습니다."})
         # 모드 해제
-        elif current_mode == selected_mode:
-            db.reference("user_info/current_device").set("null")
+        elif current_mode == gesture:
+            user_ref.set("null")
             return jsonify({"message": f"모드 '{selected_mode}'가 해제되었습니다."})
         # 모드 전환
         else:
-            db.reference("user_info/current_device").set(selected_mode)
+            user_ref.set(gesture)
             return jsonify({"message": f"모드 '{current_mode}'->'{selected_mode}'로 전환되었습니다."})
 
     if not current_mode or current_mode == "null":
         return jsonify({"error": "현재 모드가 설정되어 있지 않습니다."}), 400
 
-    control_data = db.reference(f"control_gesture/{current_mode}/{gesture}").get()
+    mode = db.reference(f"mode_gesture/{current_mode}/mode").get()
+    control_data = db.reference(f"control_gesture/{mode}/{gesture}").get()
     if control_data is None:
-        return jsonify({"error": f"모드 '{current_mode}'에 제스처 '{gesture}'가 없습니다."}), 404
+        return jsonify({"error": f"모드 '{mode}'에 제스처 '{gesture}'가 없습니다."}), 404
     
     control = control_data.get("control")
-    ir_data = db.reference(f"ir_codes/current_mode/{control}").get()
+    ir_data = db.reference(f"ir_codes/{mode}/{control}").get()
     if not ir_data or not ir_data.get("code"):
         return jsonify({"error": "IR 코드가 없습니다."}), 404
     
@@ -122,7 +127,7 @@ def handle_gesture():
     if result.rc != 0:
         return jsonify({"error" : f"MQTT 전송 실패 (코드 {result.rc})"}), 500
     
-    device = current_mode
+    device = mode
     power, partial_log = infer_device_status(device, control)
 
     log_ref = db.reference(f"status/{device}/log")

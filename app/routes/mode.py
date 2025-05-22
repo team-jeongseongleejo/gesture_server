@@ -23,5 +23,5 @@ def set_mode():
         return jsonify({"error": f"mode_gesture/{gesture}에 해당하는 모드가 없습니다."}), 404
     
     selected_mode = mode_data.get("mode")
-    db.reference("user_info/current_device").set(selected_mode)
+    db.reference("user_info/current_device").set(gesture)
     return jsonify({"message" : f"현재 모드가 '{selected_mode}'로 설정되었습니다"})
