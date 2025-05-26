@@ -1,0 +1,24 @@
+post:
+  summary: 손동작, 컨트롤 매핑 정보 등록
+  consumes:
+    - application/json
+  parameters:
+    - in: body
+      name: body
+      required: true
+      schema:
+        type: object
+        properties:
+          mode:
+            type: string
+          gesture:
+            type: string
+          control:
+            type: string
+        example:
+          mode: light
+          gesture: circle
+          control: power
+  responses:
+    200:
+      description: 매핑 정보 등록 성공

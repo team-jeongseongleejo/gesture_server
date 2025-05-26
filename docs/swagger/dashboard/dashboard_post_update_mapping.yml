@@ -1,0 +1,24 @@
+post:
+  summary: 손동작, 컨트롤 매핑 정보 수정
+  consumes:
+    - application/json
+  parameters:
+    - in: body
+      name: body
+      required: true
+      schema:
+        type: object
+        properties:
+          mode:
+            type: string
+          control:
+            type: string
+          new_gesture:
+            type: string
+        example:
+          mode: light
+          control: power
+          new_gesture: circle
+  responses:
+    200:
+      description: 매핑 정보 수정 성공

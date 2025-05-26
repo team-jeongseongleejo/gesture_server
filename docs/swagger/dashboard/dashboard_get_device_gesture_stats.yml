@@ -1,0 +1,18 @@
+get:
+  summary: 특정 기간 동안 기기별 제스처 통계
+  parameters:
+    - name: from
+      in: query
+      required: true
+      description: 시작 시각 (yy/mm/dd hh:mm 형식)
+      type: string
+      example: "25/05/26 14:00"
+    - name: to
+      in: query
+      required: true
+      description: 종료 시각 (yy/mm/dd hh:mm 형식)
+      type: string
+      example: "25/05/26 15:30"
+  responses:
+    200:
+      description: 제스처 통계 연산 성공

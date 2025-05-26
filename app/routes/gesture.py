@@ -3,6 +3,7 @@ from firebase_admin import db
 from app.routes.status import set_device_status
 from app.services.mqtt_service import publish_ir
 from flasgger.utils import swag_from
+from datetime import datetime
 import os
 
 gesture_bp = Blueprint("gesture", __name__)
@@ -17,6 +18,9 @@ def infer_device_status(device, control):
         "projector": {
             "mute": ["무음 설정", "무음 해제"]
             #"HDMI_InOut" : ["HDMI in", "HDMI out"]
+        },
+        "fan": {
+            "fan_mode": ["normal", "natural", "sleep", "eco"]
         }
     }
 
@@ -43,6 +47,13 @@ def infer_device_status(device, control):
             "pointer": "포인터",
             "right": "오른쪽으로",
             "up": "위로"
+        },
+        "fan": {
+            "horizontal" : "수평방향 전환",
+            "stronger" : "바람 강하게",
+            "vertical" : "수직방향 전환",
+            "weaker" : "바람 약하게",
+            "timer" : "타이머 설정"
         }
     }
 
@@ -54,7 +65,10 @@ def infer_device_status(device, control):
     # power 설정
     if control == "power":
         power = "off" if current_power == "on" else "on"
-        return power, {"power": power}
+        log = {"power": power}
+        if device == "fan" and power == "off":
+            log["timer"] = "0"
+        return power, log
     
     # cyclic log 설정
     cyclic = cyclic_logs.get(device, {}).get(control)
@@ -70,7 +84,59 @@ def infer_device_status(device, control):
     static = static_logs.get(device, {}).get(control)
     if static:
         return current_power, {control: static}
+
+def update_light_log(control, partial_log, log_ref):
+    if control != "color":
+        current_log = log_ref.get() or {}
+        color = current_log.get("color")
+        if color:
+            partial_log["color"] = color
+
+    return partial_log
+
+def update_fan_log(control, partial_log, log_ref):
+    current_log = log_ref.get() or {}
+    fan_mode = current_log.get("fan_mode")
+    wind_power = current_log.get("wind_power")
+    timer = current_log.get("timer")
+
+    if wind_power:
+        partial_log["wind_power"] = wind_power
+    if timer:
+        partial_log["timer"] = timer
+
+    if control == "fan_mode":
+        if partial_log.get("fan_mode") == "eco" and wind_power:
+            partial_log["wind_power"] = "2"
+        else:
+            pass
+    elif control in ["stronger", "weaker"]:
+        if fan_mode == "eco":
+            partial_log["wind_power"] = "2"
+        elif wind_power:
+            wp = int(wind_power)
+            wp = wp + 1 if control == "stronger" and wp < 12 else wp
+            wp = wp - 1 if control == "weaker" and wp > 1 else wp
+            partial_log["wind_power"] = str(wp)
+
+        if fan_mode:
+            partial_log["fan_mode"] = fan_mode
+    elif control == "timer":
+        if timer:
+            t = float(timer)
+            t = t + 0.5 if t < 7.5 else 0.0
+        partial_log["timer"] = str(t)
+
+        if fan_mode:
+            partial_log["fan_mode"] = fan_mode
+    else:      
+        if fan_mode:
+            partial_log["fan_mode"] = fan_mode
+        if partial_log.get("power") == "off":
+            partial_log["timer"] = "0.0"
     
+    return partial_log
+
 
 # 현재 모드에서 제스처 실행
 @gesture_bp.route("/gesture", methods=["POST"])
@@ -129,22 +195,30 @@ def handle_gesture():
     
     device = mode
     power, partial_log = infer_device_status(device, control)
+    print(partial_log)
 
     log_ref = db.reference(f"status/{device}/log")
-    # light 상태 설정
+    # log 고정 변수 설정
     if device == "light":
-        if control == "color":
-            log_ref.set(partial_log)
-        else:
-            current_log = log_ref.get() or {}
-            color = current_log.get("color")
-            if color:
-                partial_log["color"] = color
-            log_ref.set(partial_log)
-    # 그 외 기기 상태 설정
-    else:
-        log_ref.set(partial_log)    
+        partial_log = update_light_log(control, partial_log, log_ref)
+    elif device == "fan":
+        partial_log = update_fan_log(control, partial_log, log_ref)
+
+    # 기기 상태 설정
+    log_ref.set(partial_log)
     
     # 상태 업데이트
     set_device_status(device = device, power = power, log = partial_log)
+
+    # 로그 기록
+    log_entry = {
+        "createdAt": datetime.now().isoformat(),
+        "device": device,
+        "gesture":gesture,
+        "control": control,
+        "label" : control_data.get("label"),
+        "result": "success" if result.rc == 0 else "mqtt_fail"
+    }
+    db.reference("log_table").push(log_entry)
+
     return jsonify({"message" : "전송 성공", "payload" : payload})

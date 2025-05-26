@@ -1,0 +1,20 @@
+post:
+  summary: 기기 이름 변경
+  consumes:
+    - application/json
+  parameters:
+    - in: body
+      name: body
+      required: true
+      schema:
+        type: object
+        properties:
+          old_label:
+            type: string
+            example: fan
+          new_label:
+            type: string
+            example: blue_fan
+  responses:
+    200:
+      description: 기기 이름 변경 성공
