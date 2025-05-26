@@ -257,8 +257,6 @@ def get_device_gesture_stats():
 
     from_iso = parse_time_input(from_input) # 2025-05-26T14:30:00
     to_iso = parse_time_input(to_input)
-    print(from_iso)
-    print(to_iso)
 
     if not from_iso or not to_iso:
         return jsonify({"error": "from, to 파라미터는 필수입니다."}), 400
