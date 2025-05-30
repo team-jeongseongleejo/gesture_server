@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from firebase_admin import db
 from app.routes.status import set_device_status
-from app.services.mqtt_service import publish_ir
+from app.services.mqtt_service import publish_metadata
 from flasgger.utils import swag_from
 from datetime import datetime
 import os
@@ -37,7 +37,7 @@ def infer_device_status(device, control):
             "HDMI_InOut": "HDMI in/out", 
             "HDMI_VOL_down": "HDMI 음량-",
             "HDMI_VOL_up": "HDMI 음량+",
-            "VOL_down": "음량-",
+            "VOL_down": "음량-", 
             "VOL_up": "음량+",
             "down": "아래로",
             "home": "홈",
@@ -178,24 +178,23 @@ def handle_gesture():
         return jsonify({"error": f"모드 '{mode}'에 제스처 '{gesture}'가 없습니다."}), 404
     
     control = control_data.get("control")
-    ir_data = db.reference(f"ir_codes/{mode}/{control}").get()
-    if not ir_data or not ir_data.get("code"):
-        return jsonify({"error": "IR 코드가 없습니다."}), 404
     
-    payload = {
-        "gesture" : gesture,
+    metadata = {
         "mode" : mode,
-        "control" : control,
-        "code" : ir_data["code"]
+        "control" : control
     }
 
-    result = publish_ir(payload)
-    if result.rc != 0:
-        return jsonify({"error" : f"MQTT 전송 실패 (코드 {result.rc})"}), 500
+    if mode != "curtain":
+        ir_data = db.reference(f"ir_codes/{mode}/{control}").get()
+        if not ir_data or not ir_data.get("code"):
+            return jsonify({"error": "IR 코드가 없습니다."}), 404
     
+    result = publish_metadata(metadata)
+    if result.rc != 0:
+        return jsonify({"error" : f"MQTT 전송 실패 (metadata: {result.rc}"}), 500
+
     device = mode
     power, partial_log = infer_device_status(device, control)
-    print(partial_log)
 
     log_ref = db.reference(f"status/{device}/log")
     # log 고정 변수 설정
@@ -210,15 +209,27 @@ def handle_gesture():
     # 상태 업데이트
     set_device_status(device = device, power = power, log = partial_log)
 
+    # 상태 정보 불러오기
+    status_ref = db.reference(f"status/{device}").get()
+    power = status_ref.get("power", "unknown")
+    log = status_ref.get("log", {})
+
+    color = log.get("color", "unknown")
+    wind_power = log.get("wind_power", "unknown")
+    fan_mode = log.get("fan_mode", "unknown")
+
     # 로그 기록
     log_entry = {
         "createdAt": datetime.now().isoformat(),
         "device": device,
         "gesture":gesture,
         "control": control,
-        "label" : control_data.get("label"),
-        "result": "success" if result.rc == 0 else "mqtt_fail"
+        "power" : power,
+        "color" : color,
+        "wind_power" : wind_power,
+        "fan_mode" : fan_mode,
+        "label" : control_data.get("label")
     }
     db.reference("log_table").push(log_entry)
 
-    return jsonify({"message" : "전송 성공", "payload" : payload})
+    return jsonify({"message" : "전송 성공", "metadata" : metadata})

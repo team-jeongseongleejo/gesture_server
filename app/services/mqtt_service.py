@@ -6,5 +6,8 @@ client = mqtt.Client()
 client.connect(Config.MQTT_BROKER, Config.MQTT_PORT)
 client.loop_start()
 
-def publish_ir(payload):
-    return client.publish(Config.MQTT_TOPIC, json.dumps(payload))
+# metadata 전송
+def publish_metadata(metadata_dict):
+    metadata_json = json.dumps(metadata_dict)
+    return client.publish("smartHome/metadata", metadata_json)
+    
