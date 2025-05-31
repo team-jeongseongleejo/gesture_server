@@ -38,7 +38,6 @@ def unmapped_controls_func(mode):
             used_controls.add(g["control"])
 
     return list(all_controls - used_controls)
-    
 
 # 손동작과 매핑되지 않은 컨트롤(버튼) 목록 조회
 @dashboard_bp.route("/dashboard/unmapped_controls", methods=["GET"])
@@ -50,6 +49,27 @@ def get_unmapped_controls():
 
     unmapped_controls = unmapped_controls_func(mode)
     return jsonify(unmapped_controls)
+
+# 손동작과 매핑된 컨트롤(버튼) 목록 조회
+@dashboard_bp.route("/dashboard/mapped_controls", methods=["GET"])
+@swag_from(os.path.join(BASE_DIR, "docs/swagger/dashboard/dashboard_get_mapped_controls.yml"))
+def get_mapped_controls():
+    mode = request.args.get("mode")
+    if not mode:
+        return jsonify({"error" : "mode 파라미터가 필요합니다."}), 400
+    
+    # 가능한 컨트롤(버튼) 목록
+    controls_data = db.reference(f"ir_codes/{mode}").get() or {}
+    all_controls = set(controls_data.keys())
+
+    # 이미 매핑된 컨트롤(버튼) 목록
+    gestures_data = db.reference(f"control_gesture/{mode}").get() or {}
+    used_controls = set()
+    for g in gestures_data.values():
+        if g.get("control"):
+            used_controls.add(g["control"])
+    
+    return list(used_controls)
 
 def unmapped_gestures_func(mode):
     # 가능한 손동작 목록
@@ -79,7 +99,11 @@ def get_unmapped_gestures():
 @swag_from(os.path.join(BASE_DIR, "docs/swagger/dashboard/dashboard_get_modes.yml"))
 def get_modes():
     ref = db.reference("mode_gesture").get()
-    return jsonify(list(ref.keys()) if ref else [])
+    modes = []
+    for gesture_key, value in ref.items():
+        modes.append(value["mode"])
+
+    return jsonify(modes)
 
 
 # 제스처 추가
