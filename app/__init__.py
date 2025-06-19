@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from firebase_admin import credentials, initialize_app
 from .config import Config
 from flasgger import Swagger
@@ -7,6 +8,8 @@ def create_app():
     app = Flask(__name__)
     #Swagger(app)
     app.config.from_object(Config)
+
+    CORS(app)
 
     cred = credentials.Certificate("firebase_config.json")
     initialize_app(cred, {'databaseURL' : app.config['FIREBASE_DB_URL']})

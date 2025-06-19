@@ -152,27 +152,29 @@ def handle_gesture():
     mode_data = db.reference(f"mode_gesture/{gesture}").get()
     selected_mode = mode_data.get("mode") if mode_data else None
     user_ref = db.reference(f"user_info/current_device")
-    current_mode = user_ref.get()
+    current_mode_gesture = user_ref.get()
 
     # 모드 설정
     if selected_mode:
         # 모드 선택
-        if not current_mode or current_mode == "null":
+        if not current_mode_gesture or current_mode_gesture == "null":
             user_ref.set(gesture)
             return jsonify({"message": f"모드 '{selected_mode}'로 설정되었습니다."})
         # 모드 해제
-        elif current_mode == gesture:
+        elif current_mode_gesture == gesture:
             user_ref.set("null")
             return jsonify({"message": f"모드 '{selected_mode}'가 해제되었습니다."})
         # 모드 전환
         else:
             user_ref.set(gesture)
+            current_mode = db.reference(f"mode_gesture/{current_mode_gesture}/mode").get()
             return jsonify({"message": f"모드 '{current_mode}'->'{selected_mode}'로 전환되었습니다."})
 
-    if not current_mode or current_mode == "null":
+    if not current_mode_gesture or current_mode_gesture == "null":
         return jsonify({"error": "현재 모드가 설정되어 있지 않습니다."}), 400
 
-    mode = db.reference(f"mode_gesture/{current_mode}/mode").get()
+    mode = db.reference(f"mode_gesture/{current_mode_gesture}/mode").get()
+    
     control_data = db.reference(f"control_gesture/{mode}/{gesture}").get()
     if control_data is None:
         return jsonify({"error": f"모드 '{mode}'에 제스처 '{gesture}'가 없습니다."}), 404
@@ -182,7 +184,7 @@ def handle_gesture():
     metadata = {
         "mode" : mode,
         "control" : control
-    }
+    } 
 
     if mode != "curtain":
         ir_data = db.reference(f"ir_codes/{mode}/{control}").get()
